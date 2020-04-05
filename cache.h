@@ -15,6 +15,11 @@ struct cache_line
     bit_32 LRU_order;
 };
 
+struct cache_line_set
+{
+    struct cache_line* cache_lines;
+};
+
 class cache
 {
 private:
@@ -34,7 +39,7 @@ private:
     bit_64 tag_bit_num, index_bit_num, offset_bit_num;
 
     // cacheline指针数组
-    cache_line *cache_lines;
+    cache_line_set *cache_line_sets;
 
     // 记录访问历史的计数器
     // 指令计数
@@ -64,8 +69,8 @@ public:
     // 检查命中
     int check_hit(bit_64 _set_base, bit_64 _addr);
     // 获取cache line set中空闲的line, 获取需要替换的cache line
-    bit_64 get_free_cache_line(bit_64 _set_base);
-    bit_64 get_victim(bit_64 _set_base, replace_policy _rp);
+    int get_free_cache_line(bit_64 _set_base);
+    int get_victim(bit_64 _set_base, replace_policy _rp);
     // 更新cache
     void cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_policy _rp);
 

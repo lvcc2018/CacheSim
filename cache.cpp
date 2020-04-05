@@ -41,15 +41,19 @@ void cache::Init(bit_64 _cache_size, bit_64 _cache_line_size, bit_64 _way_num, r
     hit_count = miss_count = read_hit_count = write_hit_count = read_miss_count = write_miss_count = 0;
 
     // 分配cache空间
-    cache_lines = (cache_line *)malloc(sizeof(cache_line) * cache_line_num);
-    memset(cache_lines, 0, sizeof(cache_line) * cache_line_num);
+    cache_line_sets = (cache_line_set *)malloc(sizeof(cache_line_set) * set_num);
+    memset(cache_line_sets,0,sizeof(cache_line_set)*set_num);
+    for(int i=0;i<set_num;i++){
+        cache_line_sets[i].cache_lines = (cache_line *)malloc(sizeof(cache_line)*way_num);
+        memset(cache_line_sets[i].cache_lines,0,sizeof(cache_line)*way_num);
+    }
 
     for (int i = 0; i < set_num; i++)
     {
         for (int j = 0; j < way_num; j++)
         // 初始化cache line LRU顺序
         {
-            cache_lines[i * way_num + j].LRU_order = j;
+            cache_line_sets[i].cache_lines[j].LRU_order = j;
         }
     }
 
@@ -58,7 +62,7 @@ void cache::Init(bit_64 _cache_size, bit_64 _cache_line_size, bit_64 _way_num, r
 }
 cache::~cache()
 {
-    free(cache_lines);
+    free(cache_line_sets);
 }
 
 void cache::show_info()
@@ -78,11 +82,11 @@ void cache::show_info()
 // 检查在当前set中是否命中
 int cache::check_hit(bit_64 _set_base, bit_64 _addr)
 {
-    assert((_set_base >= 0) && (_set_base <= (set_num - 1) * way_num));
+    assert((_set_base >= 0) && (_set_base < set_num));
     for (bit_64 i = 0; i < way_num; i++)
     {
-        if ((cache_lines[_set_base + i].flag & CACHE_VALID) &&
-            (cache_lines[_set_base + i].tag == (_addr >> (offset_bit_num + index_bit_num))))
+        if ((cache_line_sets[_set_base].cache_lines[i].flag & CACHE_VALID) &&
+            (cache_line_sets[_set_base].cache_lines[i].tag == (_addr >> (offset_bit_num + index_bit_num))))
         {
             // 找到后返回在组中的偏移
             return i;
@@ -92,12 +96,12 @@ int cache::check_hit(bit_64 _set_base, bit_64 _addr)
     return -1;
 }
 // 获取cache line set中空闲的line
-bit_64 cache::get_free_cache_line(bit_64 _set_base)
+int cache::get_free_cache_line(bit_64 _set_base)
 {
-    assert((_set_base >= 0) && (_set_base <= (set_num - 1) * way_num));
+    assert((_set_base >= 0) && (_set_base < set_num));
     for (bit_64 i = 0; i < way_num; i++)
     {
-        if (!(cache_lines[_set_base + i].flag & CACHE_VALID))
+        if (!(cache_line_sets[_set_base].cache_lines[i].flag & CACHE_VALID))
         {
             // 找到后返回在组中的偏移
             return i;
@@ -107,10 +111,10 @@ bit_64 cache::get_free_cache_line(bit_64 _set_base)
     return -1;
 }
 
-bit_64 cache::get_victim(bit_64 _set_base, replace_policy _rp)
+int cache::get_victim(bit_64 _set_base, replace_policy _rp)
 {
     printf("%d", _rp);
-    assert((_set_base >= 0) && (_set_base <= (set_num - 1) * way_num));
+    assert((_set_base >= 0) && (_set_base < set_num));
     int victim_index;
     int max_order, min;
     victim_index = get_free_cache_line(_set_base);
@@ -130,9 +134,9 @@ bit_64 cache::get_victim(bit_64 _set_base, replace_policy _rp)
         max_order = 0;
         for (bit_64 i = 0; i < way_num; i++)
         {
-            if (cache_lines[_set_base + i].LRU_order > max_order)
+            if (cache_line_sets[_set_base].cache_lines[i].LRU_order > max_order)
             {
-                max_order = cache_lines[_set_base + i].LRU_order;
+                max_order = cache_line_sets[_set_base].cache_lines[i].LRU_order;
                 victim_index = i;
             }
         }
@@ -146,9 +150,9 @@ bit_64 cache::get_victim(bit_64 _set_base, replace_policy _rp)
     }
     if (victim_index >= 0)
     {
-        if (cache_lines[_set_base + victim_index].flag & CACHE_DIRTY)
+        if (cache_line_sets[_set_base].cache_lines[victim_index].flag & CACHE_DIRTY)
         {
-            cache_lines[_set_base + victim_index].flag &= ~CACHE_DIRTY;
+            cache_line_sets[_set_base].cache_lines[victim_index].flag &= ~CACHE_DIRTY;
             write_memory_count++;
         }
     }
@@ -159,7 +163,7 @@ bit_64 cache::get_victim(bit_64 _set_base, replace_policy _rp)
 // 更新cache相关状态
 void cache::cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_policy _rp)
 {
-    assert((_set_base >= 0) && (_set_base <= (set_num - 1) * way_num));
+    assert((_set_base >= 0) && (_set_base < set_num));
     assert(_index >= 0 && _index < way_num);
     if (hit) // 命中
     {
@@ -170,10 +174,10 @@ void cache::cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_poli
         case LRU:
             for (bit_64 i = 0; i < way_num; i++)
             {
-                if (cache_lines[_set_base + i].LRU_order < cache_lines[_set_base + _index].LRU_order)
-                    cache_lines[_set_base + i].LRU_order++;
+                if (cache_line_sets[_set_base].cache_lines[i].LRU_order < cache_line_sets[_set_base].cache_lines[_index].LRU_order)
+                    cache_line_sets[_set_base].cache_lines[i].LRU_order++;
             }
-            cache_lines[_set_base + _index].LRU_order = 0;
+            cache_line_sets[_set_base].cache_lines[_index].LRU_order = 0;
 
             break;
         default:
@@ -191,10 +195,10 @@ void cache::cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_poli
         {
             for (bit_64 i = 0; i < way_num; i++)
             {
-                if (cache_lines[_set_base + i].LRU_order < cache_lines[_set_base + _index].LRU_order)
-                    cache_lines[_set_base + i].LRU_order++;
+                if (cache_line_sets[_set_base].cache_lines[i].LRU_order < cache_line_sets[_set_base].cache_lines[_index].LRU_order)
+                    cache_line_sets[_set_base].cache_lines[i].LRU_order++;
             }
-            cache_lines[_set_base + _index].LRU_order = 0;
+            cache_line_sets[_set_base].cache_lines[_index].LRU_order = 0;
             break;
         }
         default:
@@ -213,7 +217,7 @@ void cache::cache_operation(bit_64 _addr, char _operation)
     if (_operation == 'w')
         write_order_count++;
 
-    bit_64 set_base = ((_addr >> (offset_bit_num)) % set_num) * way_num;
+    bit_64 set_base = (_addr >> (offset_bit_num)) % set_num;
     int cache_index = check_hit(set_base, _addr);
     int victim_index = get_victim(set_base, rp);
 
@@ -231,7 +235,7 @@ void cache::cache_operation(bit_64 _addr, char _operation)
             }
             else // 写回
             {
-                cache_lines[set_base + cache_index].flag |= CACHE_DIRTY;
+                cache_line_sets[set_base].cache_lines[cache_index].flag |= CACHE_DIRTY;
             }
             cache_update(true, set_base, cache_index, rp);
         }
@@ -244,16 +248,16 @@ void cache::cache_operation(bit_64 _addr, char _operation)
             {
                 memory_count++;
                 read_memory_count++;
-                cache_lines[set_base + victim_index].tag = _addr >> (index_bit_num + offset_bit_num);
-                cache_lines[set_base + victim_index].flag = (bit_8)~FLAG_B_MASK;
-                cache_lines[set_base + victim_index].flag |= CACHE_VALID;
+                cache_line_sets[set_base].cache_lines[victim_index].tag = _addr >> (index_bit_num + offset_bit_num);
+                cache_line_sets[set_base].cache_lines[victim_index].flag = (bit_8)~FLAG_B_MASK;
+                cache_line_sets[set_base].cache_lines[victim_index].flag |= CACHE_VALID;
                 if (write_through)
                 {
                     write_memory_count++;
                 }
                 else
                 {
-                    cache_lines[set_base + victim_index].flag |= CACHE_DIRTY;
+                    cache_line_sets[set_base].cache_lines[victim_index].flag |= CACHE_DIRTY;
                 }
                 printf("Replace the %d way cacheline\n", victim_index);
                 cache_update(false, set_base, victim_index, rp);
@@ -282,9 +286,9 @@ void cache::cache_operation(bit_64 _addr, char _operation)
             read_miss_count++;
             memory_count++;
             read_memory_count++;
-            cache_lines[set_base + victim_index].tag = _addr >> (index_bit_num + offset_bit_num);
-            cache_lines[set_base + victim_index].flag = (bit_8)~FLAG_B_MASK;
-            cache_lines[set_base + victim_index].flag |= CACHE_VALID;
+            cache_line_sets[set_base].cache_lines[victim_index].tag = _addr >> (index_bit_num + offset_bit_num);
+            cache_line_sets[set_base].cache_lines[victim_index].flag = (bit_8)~FLAG_B_MASK;
+            cache_line_sets[set_base].cache_lines[victim_index].flag |= CACHE_VALID;
             printf("Replace the %d way cacheline\n", victim_index);
             cache_update(false, set_base, victim_index, rp);
         }
@@ -297,7 +301,6 @@ void cache::read_file(const char *_filename)
     FILE *infile = fopen(_filename, "r");
     char act;
     bit_64 addr;
-
     while (fscanf(infile, "%c 0x%llx\n", &act, &addr) == 2)
     {
         switch (act)
