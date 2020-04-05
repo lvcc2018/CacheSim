@@ -2,3 +2,4 @@ trace
 *.pptx
 *.pdf
 .vscode
+.DS_Store
