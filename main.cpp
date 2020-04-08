@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     replace_policy _rp = LRU;
     bit_64 _write_through = 0;
     bit_64 _write_allocation = 0;
-    string _trace_file = "trace/test.trace";
+    string _trace_file = "trace/astar.trace";
     string _result_file = "result";
     string _log_file = "log";
     int c;

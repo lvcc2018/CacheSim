@@ -252,16 +252,16 @@ bool cache::cache_operation(bit_64 _addr, char _operation)
 {
     bool result = false;
     order_count++;
-    if (_operation == 'r')
+    if ((_operation == 'r') ||( _operation == 'l'))
         read_order_count++;
-    if (_operation == 'w')
+    if ((_operation == 'w') ||( _operation == 's'))
         write_order_count++;
 
     bit_64 set_base = (_addr >> (offset_bit_num)) % set_num;
     int cache_index = check_hit(set_base, _addr);
     int victim_index = get_victim(set_base, rp);
 
-    if (_operation == 'w') // 写操作
+    if ((_operation == 'w')||( _operation == 's')) // 写操作
     {
         if (cache_index >= 0) // 写操作命中
         {
@@ -350,13 +350,20 @@ void cache::read_file(const char *_trace_filename, const char *_log_filename)
     outfile.open(_log_filename, std::ios::out | std::ios::app);
     while (fscanf(infile, "%c 0x%llx\n", &act, &addr) == 2)
     {
+        
         switch (act)
         {
         case 'r':
-            //printf("Read from addr: %llx ", addr);
+            printf("Read from addr: %llx ", addr);
             break;
         case 'w':
-            //printf("Write to addr:  %llx ", addr);
+            printf("Write to addr:  %llx ", addr);
+            break;
+        case 'l':
+            printf("Read from addr: %llx ", addr);
+            break;
+        case 's':
+            printf("Write to addr:  %llx ", addr);
             break;
         default:
             continue;
