@@ -1,5 +1,4 @@
 #include "cache.h"
-#include <fstream>
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -16,6 +15,8 @@ int main(int argc, char **argv)
     bit_64 _write_through = 0;
     bit_64 _write_allocation = 0;
     string _trace_file = "trace/test.trace";
+    string _result_file = "result";
+    string _log_file = "log";
     int c;
     int optIndex = 0;
     int lopt;
@@ -28,6 +29,8 @@ int main(int argc, char **argv)
         {"write_through", no_argument, NULL, 't'},
         {"write_allocation", no_argument, NULL, 'a'},
         {"trace_file", required_argument, &lopt, 4},
+        {"result_file", required_argument, &lopt, 5},
+        {"log_file", required_argument, &lopt, 6},
         {0, 0, 0, 0}};
     while (1)
     {
@@ -54,6 +57,12 @@ int main(int argc, char **argv)
             case 4:
                 _trace_file = optarg;
                 break;
+            case 5:
+                _result_file = optarg;
+                break;
+            case 6:
+                _log_file = optarg;
+                break;
             }
             break;
         }
@@ -63,7 +72,8 @@ int main(int argc, char **argv)
                 _rp = LRU;
             else if (strncmp(optarg, "Random", sizeof("Random")) == 0)
                 _rp = Random;
-
+            else if (strncmp(optarg, "BT", sizeof("BT")) == 0)
+                _rp = BT;
             break;
         }
 
@@ -82,10 +92,10 @@ int main(int argc, char **argv)
     printf("replace_policy:     %d\n", _rp);
     printf("write_through?:     %llu\n", _write_through);
     printf("write_allocation?:  %llu\n\n", _write_allocation);
-    printf("trace file:         %s\n",_trace_file.c_str());
+    printf("trace file:         %s\n", _trace_file.c_str());
     cache cache_sim;
     cache_sim.Init(_cache_size, _cacheline_size, _way_num, _rp, _write_through, _write_allocation);
-    cache_sim.read_file(_trace_file.c_str());
-    cache_sim.save_rate();
+    cache_sim.read_file(_trace_file.c_str(), _log_file.c_str());
+    cache_sim.save_result(_result_file.c_str());
     return 0;
 }

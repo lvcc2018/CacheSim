@@ -1,0 +1,100 @@
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 501468
+Read order count: 289766
+Write order count: 211702
+Access memory count: 116766
+Read memory count: 116766
+Write memory count: 74762
+Hit count: 384702
+Miss count: 116766
+Read hit count: 259687
+Read miss count: 30079
+Write hit count: 125015
+Write miss count: 86687
+Miss rate: 0.232848
+Read miss rate: 0.103804
+Write miss rate: 0.409477
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 544514
+Read order count: 369344
+Write order count: 175170
+Access memory count: 6627
+Read memory count: 6627
+Write memory count: 0
+Hit count: 537887
+Miss count: 6627
+Read hit count: 365973
+Read miss count: 3371
+Write hit count: 171914
+Write miss count: 3256
+Miss rate: 0.0121705
+Read miss rate: 0.00912699
+Write miss rate: 0.0185877
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 507700
+Read order count: 280182
+Write order count: 227518
+Access memory count: 23232
+Read memory count: 23232
+Write memory count: 9067
+Hit count: 484468
+Miss count: 23232
+Read hit count: 275835
+Read miss count: 4347
+Write hit count: 208633
+Write miss count: 18885
+Miss rate: 0.0457593
+Read miss rate: 0.0155149
+Write miss rate: 0.0830044
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 507441
+Read order count: 302052
+Write order count: 205389
+Access memory count: 9084
+Read memory count: 9084
+Write memory count: 753
+Hit count: 498357
+Miss count: 9084
+Read hit count: 297048
+Read miss count: 5004
+Write hit count: 201309
+Write miss count: 4080
+Miss rate: 0.0179016
+Read miss rate: 0.0165667
+Write miss rate: 0.0198647
+--------------------------------------------------------------

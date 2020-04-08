@@ -1,6 +1,7 @@
 #include "cache.h"
 #include <assert.h>
 
+// 用于计算位数
 unsigned long long log_two(unsigned long long natural)
 {
     unsigned long long count = 0;
@@ -42,10 +43,12 @@ void cache::Init(bit_64 _cache_size, bit_64 _cache_line_size, bit_64 _way_num, r
 
     // 分配cache空间
     cache_line_sets = (cache_line_set *)malloc(sizeof(cache_line_set) * set_num);
-    memset(cache_line_sets,0,sizeof(cache_line_set)*set_num);
-    for(int i=0;i<set_num;i++){
-        cache_line_sets[i].cache_lines = (cache_line *)malloc(sizeof(cache_line)*way_num);
-        memset(cache_line_sets[i].cache_lines,0,sizeof(cache_line)*way_num);
+    memset(cache_line_sets, 0, sizeof(cache_line_set) * set_num);
+    for (int i = 0; i < set_num; i++)
+    {
+        cache_line_sets[i].binary_tree &= 0x0;
+        cache_line_sets[i].cache_lines = (cache_line *)malloc(sizeof(cache_line) * way_num);
+        memset(cache_line_sets[i].cache_lines, 0, sizeof(cache_line) * way_num);
     }
 
     for (int i = 0; i < set_num; i++)
@@ -67,16 +70,17 @@ cache::~cache()
 
 void cache::show_info()
 {
-    printf("Cache Sim Config:\n");
+    printf("Cache Sim Config:\n\n");
     printf("Cache size:         %llu KB\n", (cache_size >> 10));
     printf("Cache line size:    %llu B\n", cache_line_size);
     printf("Cache ways num:     %llu ways\n", way_num);
+    printf("Cache sets num:     %llu sets\n", set_num);
     printf("Cache line num:     %llu cachelines\n", cache_line_num);
     printf("Cache write policy: ");
     printf(write_through ? "Write through + " : "Write back + ");
     printf(write_allocation ? "Write allocation\n" : "Write not allocation\n");
     printf("Address Analysis:\n");
-    printf("Tag (%llu bits) | Index (%llu bits) | offset (%llu bits) \n", tag_bit_num, index_bit_num, offset_bit_num);
+    printf("Tag (%llu bits) | Index (%llu bits) | offset (%llu bits) \n\n", tag_bit_num, index_bit_num, offset_bit_num);
 }
 
 // 检查在当前set中是否命中
@@ -111,9 +115,10 @@ int cache::get_free_cache_line(bit_64 _set_base)
     return -1;
 }
 
+// 获取当前组内的替换对象
 int cache::get_victim(bit_64 _set_base, replace_policy _rp)
 {
-    printf("%d", _rp);
+    //printf("%d ", _rp);
     assert((_set_base >= 0) && (_set_base < set_num));
     int victim_index;
     int max_order, min;
@@ -132,14 +137,34 @@ int cache::get_victim(bit_64 _set_base, replace_policy _rp)
     case LRU:
     {
         max_order = 0;
-        for (bit_64 i = 0; i < way_num; i++)
+        if (way_num == 1)
         {
-            if (cache_line_sets[_set_base].cache_lines[i].LRU_order > max_order)
+            victim_index = 0;
+        }
+        else
+        {
+            for (bit_64 i = 0; i < way_num; i++)
             {
-                max_order = cache_line_sets[_set_base].cache_lines[i].LRU_order;
-                victim_index = i;
+                if (cache_line_sets[_set_base].cache_lines[i].LRU_order > max_order)
+                {
+                    max_order = cache_line_sets[_set_base].cache_lines[i].LRU_order;
+                    victim_index = i;
+                }
             }
         }
+        break;
+    }
+    case BT:
+    {
+        int index = 0;
+        int bt_length = log_two(way_num);
+        for (int i = 0; i < bt_length; i++)
+        {
+            reversebit(cache_line_sets[_set_base].binary_tree, index);
+            index = getbit(cache_line_sets[_set_base].binary_tree, index) == 0 ? (index * 2 + 1) : (index * 2 + 2);
+        }
+        index -= (way_num - 1);
+        victim_index = index;
         break;
     }
     default:
@@ -170,15 +195,19 @@ void cache::cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_poli
         switch (_rp)
         {
         case Random:
+            // 随机替换没有需要更新的数据
             break;
         case LRU:
+            // LRU替换需要更新每个cacheline的次序
             for (bit_64 i = 0; i < way_num; i++)
             {
                 if (cache_line_sets[_set_base].cache_lines[i].LRU_order < cache_line_sets[_set_base].cache_lines[_index].LRU_order)
                     cache_line_sets[_set_base].cache_lines[i].LRU_order++;
             }
             cache_line_sets[_set_base].cache_lines[_index].LRU_order = 0;
-
+            break;
+        case BT:
+            // 二叉树替换策略
             break;
         default:
             printf("Wrong replace policy...");
@@ -201,6 +230,16 @@ void cache::cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_poli
             cache_line_sets[_set_base].cache_lines[_index].LRU_order = 0;
             break;
         }
+        case BT:
+            if (get_free_cache_line(_set_base) == -1)
+            {
+                setbit(cache_line_sets[_set_base].binary_tree, way_num);
+            }
+            else
+            {
+                clrbit(cache_line_sets[_set_base].binary_tree, way_num);
+            }
+            break;
         default:
             printf("Wrong replace policy...");
             break;
@@ -209,8 +248,9 @@ void cache::cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_poli
 }
 
 // 读入指令
-void cache::cache_operation(bit_64 _addr, char _operation)
+bool cache::cache_operation(bit_64 _addr, char _operation)
 {
+    bool result = false;
     order_count++;
     if (_operation == 'r')
         read_order_count++;
@@ -225,7 +265,8 @@ void cache::cache_operation(bit_64 _addr, char _operation)
     {
         if (cache_index >= 0) // 写操作命中
         {
-            printf("Hit!\n");
+            //printf("Hit!\n");
+            result = true;
             hit_count++;
             write_hit_count++;
             if (write_through) // 写通
@@ -241,7 +282,8 @@ void cache::cache_operation(bit_64 _addr, char _operation)
         }
         else // 写操作未命中
         {
-            printf("Miss! ");
+            //printf("Miss! ");
+            result = false;
             miss_count++;
             write_miss_count++;
             if (write_allocation) // 写分配
@@ -259,12 +301,12 @@ void cache::cache_operation(bit_64 _addr, char _operation)
                 {
                     cache_line_sets[set_base].cache_lines[victim_index].flag |= CACHE_DIRTY;
                 }
-                printf("Replace the %d way cacheline\n", victim_index);
+                //printf("Replace the %d way cacheline\n", victim_index);
                 cache_update(false, set_base, victim_index, rp);
             }
             else // 写不分配
             {
-                printf("\n");
+                //printf("\n");
                 memory_count++;
                 write_memory_count++;
             }
@@ -274,14 +316,16 @@ void cache::cache_operation(bit_64 _addr, char _operation)
     {
         if (cache_index >= 0) // 命中
         {
-            printf("Hit!\n");
+            //printf("Hit!\n");
+            result = true;
             hit_count++;
             read_hit_count++;
             cache_update(true, set_base, cache_index, rp);
         }
         else // 不命中
         {
-            printf("Miss! ");
+            //printf("Miss! ");
+            result = false;
             miss_count++;
             read_miss_count++;
             memory_count++;
@@ -289,41 +333,52 @@ void cache::cache_operation(bit_64 _addr, char _operation)
             cache_line_sets[set_base].cache_lines[victim_index].tag = _addr >> (index_bit_num + offset_bit_num);
             cache_line_sets[set_base].cache_lines[victim_index].flag = (bit_8)~FLAG_B_MASK;
             cache_line_sets[set_base].cache_lines[victim_index].flag |= CACHE_VALID;
-            printf("Replace the %d way cacheline\n", victim_index);
+            //printf("Replace the %d way cacheline\n", victim_index);
             cache_update(false, set_base, victim_index, rp);
         }
     }
+    return result;
 }
 
 // 读取文件
-void cache::read_file(const char *_filename)
+void cache::read_file(const char *_trace_filename, const char *_log_filename)
 {
-    FILE *infile = fopen(_filename, "r");
+    FILE *infile = fopen(_trace_filename, "r");
     char act;
     bit_64 addr;
+    std::ofstream outfile;
+    outfile.open(_log_filename, std::ios::out | std::ios::app);
     while (fscanf(infile, "%c 0x%llx\n", &act, &addr) == 2)
     {
         switch (act)
         {
         case 'r':
-            printf("Read from addr: %llx ", addr);
+            //printf("Read from addr: %llx ", addr);
             break;
         case 'w':
-            printf("Write to addr:  %llx ", addr);
+            //printf("Write to addr:  %llx ", addr);
             break;
         default:
             continue;
         }
-        cache_operation(addr, act);
+        
+        if (cache_operation(addr, act) == true)
+        {
+            outfile << "Hit\n";
+        }
+        else
+        {
+            outfile << "Miss\n";
+        }
     }
-
+    outfile.close();
     fclose(infile);
 }
 
 // 获取数据
-void cache::save_rate()
+void cache::save_result(const char *_filename)
 {
-    printf("\n");
+    printf("-----------------------------------\n");
     show_info();
 
     printf("Order count :               %llu\n", order_count);
@@ -344,4 +399,63 @@ void cache::save_rate()
     printf("Miss rate :                 %f\n", (1.0 * miss_count) / (miss_count + hit_count));
     printf("Read miss rate :            %f\n", (1.0 * read_miss_count) / (read_miss_count + read_hit_count));
     printf("Write miss rate :           %f\n\n", (1.0 * write_miss_count) / (write_miss_count + write_hit_count));
+    printf("-----------------------------------\n");
+
+    std::ofstream file;
+    file.open(_filename, std::ios::out | std::ios::app);
+    if (file.is_open())
+    {
+        file << "--------------------------------------------------------------\n";
+        file << "Cache Sim Config:\n";
+        file << "Cache size: " << (cache_size >> 10) << " KB\n";
+        file << "Cache line size: " << cache_line_size << " B\n";
+        file << "Cache ways num: " << way_num << " ways\n";
+        file << "Cache line num: " << cache_line_num << " cachelines\n";
+        file << "Cache write policy: ";
+        file << (write_through ? "Write through + " : "Write back + ");
+        file << (write_allocation ? "Write allocation\n" : "Write not allocation\n");
+        file << "Address Analysis:";
+        file << "Tag (" << tag_bit_num << " bits) | Index (" << index_bit_num << " bits) | offset (" << offset_bit_num << " bits) \n\n";
+
+        file << "Order count: "
+             << order_count << "\n";
+        file << "Read order count: "
+             << read_order_count << "\n";
+        file << "Write order count: "
+             << write_order_count << "\n";
+
+        file << "Access memory count: "
+             << memory_count << "\n";
+        file << "Read memory count: "
+             << read_memory_count << "\n";
+        file << "Write memory count: "
+             << write_memory_count << "\n";
+
+        file << "Hit count: "
+             << hit_count << "\n";
+        file << "Miss count: "
+             << miss_count << "\n";
+        file << "Read hit count: "
+             << read_hit_count << "\n";
+        file << "Read miss count: "
+             << read_miss_count << "\n";
+        file << "Write hit count: "
+             << write_hit_count << "\n";
+        file << "Write miss count: "
+             << write_miss_count << "\n";
+
+        file << "Miss rate: "
+             << ((1.0 * miss_count) / (miss_count + hit_count)) << "\n";
+        file << "Read miss rate: "
+             << ((1.0 * read_miss_count) / (read_miss_count + read_hit_count)) << "\n";
+        file << "Write miss rate: "
+             << ((1.0 * write_miss_count) / (write_miss_count + write_hit_count)) << "\n";
+        file << "--------------------------------------------------------------\n";
+    }
+    else
+    {
+        printf("Log file open failed");
+    }
+
+    file.close();
 }

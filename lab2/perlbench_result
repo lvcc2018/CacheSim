@@ -1,0 +1,75 @@
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 507441
+Read order count: 302052
+Write order count: 205389
+Access memory count: 9084
+Read memory count: 9084
+Write memory count: 753
+Hit count: 498357
+Miss count: 9084
+Read hit count: 297048
+Read miss count: 5004
+Write hit count: 201309
+Write miss count: 4080
+Miss rate: 0.0179016
+Read miss rate: 0.0165667
+Write miss rate: 0.0198647
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 507441
+Read order count: 302052
+Write order count: 205389
+Access memory count: 9101
+Read memory count: 9101
+Write memory count: 5338
+Hit count: 498340
+Miss count: 9101
+Read hit count: 297022
+Read miss count: 5030
+Write hit count: 201318
+Write miss count: 4071
+Miss rate: 0.0179351
+Read miss rate: 0.0166528
+Write miss rate: 0.0198209
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 507441
+Read order count: 302052
+Write order count: 205389
+Access memory count: 9075
+Read memory count: 9075
+Write memory count: 5836
+Hit count: 498366
+Miss count: 9075
+Read hit count: 297045
+Read miss count: 5007
+Write hit count: 201321
+Write miss count: 4068
+Miss rate: 0.0178839
+Read miss rate: 0.0165766
+Write miss rate: 0.0198063
+--------------------------------------------------------------

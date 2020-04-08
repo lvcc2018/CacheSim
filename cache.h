@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <stdio.h>
+#include <fstream>
 #include <iostream>
 #include "config.h"
 
@@ -18,6 +19,7 @@ struct cache_line
 struct cache_line_set
 {
     struct cache_line* cache_lines;
+    bit_8 binary_tree;
 };
 
 class cache
@@ -75,12 +77,13 @@ public:
     void cache_update(bool hit, bit_64 _set_base, bit_64 _index, replace_policy _rp);
 
     // 读入指令
-    void cache_operation(bit_64 _addr, char _operation);
+    bool cache_operation(bit_64 _addr, char _operation);
     // 读取文件
-    void read_file(const char *_filename);
+    void read_file(const char *_trace_filename, const char *_log_filename);
 
     // 获取数据
-    void save_rate();
+    void save_result(const char* _filename);
+
 };
 
 #endif

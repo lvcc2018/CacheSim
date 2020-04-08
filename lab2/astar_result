@@ -1,0 +1,75 @@
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 501468
+Read order count: 289766
+Write order count: 211702
+Access memory count: 116766
+Read memory count: 116766
+Write memory count: 74762
+Hit count: 384702
+Miss count: 116766
+Read hit count: 259687
+Read miss count: 30079
+Write hit count: 125015
+Write miss count: 86687
+Miss rate: 0.232848
+Read miss rate: 0.103804
+Write miss rate: 0.409477
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 501468
+Read order count: 289766
+Write order count: 211702
+Access memory count: 116510
+Read memory count: 116510
+Write memory count: 90736
+Hit count: 384958
+Miss count: 116510
+Read hit count: 259580
+Read miss count: 30186
+Write hit count: 125378
+Write miss count: 86324
+Miss rate: 0.232338
+Read miss rate: 0.104174
+Write miss rate: 0.407762
+--------------------------------------------------------------
+--------------------------------------------------------------
+Cache Sim Config:
+Cache size: 128 KB
+Cache line size: 8 B
+Cache ways num: 8 ways
+Cache line num: 16384 cachelines
+Cache write policy: Write back + Write allocation
+Address Analysis:Tag (50 bits) | Index (11 bits) | offset (3 bits) 
+
+Order count: 501468
+Read order count: 289766
+Write order count: 211702
+Access memory count: 116467
+Read memory count: 116467
+Write memory count: 85237
+Hit count: 385001
+Miss count: 116467
+Read hit count: 259634
+Read miss count: 30132
+Write hit count: 125367
+Write miss count: 86335
+Miss rate: 0.232252
+Read miss rate: 0.103987
+Write miss rate: 0.407814
+--------------------------------------------------------------
